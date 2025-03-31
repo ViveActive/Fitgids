@@ -14,6 +14,7 @@ st.title("FitKompas Vragenlijst")
 # Laad de vragenlijst
 @st.cache_data
 def load_data():
+    import numpy as np
     df = pd.read_excel("vragenlijst.xlsx")
     df = df.dropna(subset=["Unnamed: 1"])
     df = df.rename(columns={
@@ -22,9 +23,11 @@ def load_data():
         "y-as": "y_as",
         "Unnamed: 4": "richting",
         "Unnamed: 6": "thema"
-    })
     df = df[df['vraag'].notna() & (df['vraag'] != '')]
+    df = df.replace({np.nan: None})
+    })
     return df
+
 df = load_data()
 
 antwoorden = []
