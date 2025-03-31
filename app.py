@@ -33,7 +33,7 @@ df = load_data()
 antwoorden = []
 st.write("Beantwoord de onderstaande vragen:")
 
-for i, row in df.iterrows():
+        f"{int(row['# vraag'])}. {row['vraag']} - Thema: {row['thema']}",
     antwoord = st.radio(
         f"{int(row['# vraag'])}. {row['vraag']}  -  Thema: {row['thema']}",
 **Thema:** {row['thema']}",
