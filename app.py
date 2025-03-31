@@ -22,7 +22,7 @@ def load_data():
         "x-as": "x_as",
         "y-as": "y_as",
         "Unnamed: 4": "richting",
-        "Unnamed: 6": "thema"
+        "Unnamed: 6": "thema",
     df = df[df['vraag'].notna() & (df['vraag'] != '')]
     df = df.replace({np.nan: None})
     })
