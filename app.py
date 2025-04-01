@@ -1,12 +1,11 @@
 import streamlit as st
 import pandas as pd
 from PIL import Image
-import matplotlib.pyplot as plt
 
-# Zorg ervoor dat set_page_config als eerste Streamlit-commando wordt aangeroepen!
+# Zorg dat dit als eerste commando wordt aangeroepen
 st.set_page_config(page_title="FitKompas", layout="wide")
 
-# Custom CSS voor een mooie, schermvullende layout
+# Custom CSS voor een mooi schermvullend ontwerp
 st.markdown(
     """
     <style>
@@ -50,7 +49,7 @@ def load_data():
         "y-as": "y_as",
         "Unnamed: 4": "richting",
         "Unnamed: 6": "thema",
-        "# vraag": "# vraag"  # zorg dat deze kolom aanwezig is
+        "# vraag": "# vraag"
     })
     df = df[df['vraag'].notna() & (df['vraag'] != '')]
     df.reset_index(drop=True, inplace=True)
@@ -59,7 +58,7 @@ def load_data():
 df = load_data()
 total_questions = len(df)
 
-# Initializeer session_state voor huidige vraagindex en antwoorden
+# Initialiseer session_state voor de huidige vraagindex en antwoorden
 if 'q_index' not in st.session_state:
     st.session_state.q_index = 0
 if 'answers' not in st.session_state:
@@ -68,26 +67,29 @@ if 'answers' not in st.session_state:
 # Toon één vraag per keer
 if st.session_state.q_index < total_questions:
     question = df.iloc[st.session_state.q_index]
-    with st.container():
-        st.markdown(f"### Vraag {st.session_state.q_index + 1} van {total_questions}")
-        st.markdown(f"**{int(question['# vraag'])}. {question['vraag']}**")
-        st.markdown(f"**Thema:** {question['thema']}")
-        
-        # Likert-schaal met tekstopties (zonder cijfers)
-        options = [
-            "Helemaal niet mee eens",
-            "Mee oneens",
-            "Neutraal",
-            "Mee eens",
-            "Helemaal mee eens"
-        ]
-        # Toon de radio buttons horizontaal als scorebalk
-        antwoord = st.radio("Selecteer jouw mening:", options, horizontal=True, key=f"vraag_{st.session_state.q_index}")
-        
-        if st.button("Volgende"):
-            st.session_state.answers.append(antwoord)
-            st.session_state.q_index += 1
+    st.markdown(f"### Vraag {st.session_state.q_index + 1} van {total_questions}")
+    st.markdown(f"**{int(question['# vraag'])}. {question['vraag']}**")
+    st.markdown(f"**Thema:** {question['thema']}")
+    
+    # Likert-schaal met tekstopties (geen cijfers)
+    options = [
+        "Helemaal niet mee eens",
+        "Mee oneens",
+        "Neutraal",
+        "Mee eens",
+        "Helemaal mee eens"
+    ]
+    
+    # Toon radio-buttons horizontaal als scorebalk
+    antwoord = st.radio("Selecteer jouw mening:", options, horizontal=True, key=f"vraag_{st.session_state.q_index}")
+    
+    if st.button("Volgende"):
+        st.session_state.answers.append(antwoord)
+        st.session_state.q_index += 1
+        try:
             st.experimental_rerun()
+        except Exception:
+            st.write("Herlaad de pagina.")
 else:
     st.success("Je hebt alle vragen beantwoord!")
     st.markdown("### Jouw antwoorden:")
@@ -97,4 +99,7 @@ else:
     if st.button("Opnieuw beginnen"):
         st.session_state.q_index = 0
         st.session_state.answers = []
-        st.experimental_rerun()
+        try:
+            st.experimental_rerun()
+        except Exception:
+            st.write("Herlaad de pagina.")
