@@ -3,12 +3,40 @@ import pandas as pd
 from PIL import Image
 import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="FitKompas", layout="centered")
+# Custom CSS voor een mooie, schermvullende layout
+st.markdown(
+    """
+    <style>
+    body {
+        background-color: #f0f2f6;
+    }
+    h1, h3 {
+        font-family: 'Segoe UI', sans-serif;
+        color: #2e7d32;
+    }
+    .stButton>button {
+        background-color: #2e7d32;
+        color: white;
+        border-radius: 10px;
+        padding: 10px 20px;
+    }
+    .question-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 80vh;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
-# Laad logo
+st.set_page_config(page_title="FitKompas", layout="wide")
+
+# Laad logo en toon titel
 logo = Image.open("logo.png")
 st.image(logo, width=200)
-
 st.title("FitKompas Vragenlijst")
 
 @st.cache_data
@@ -20,94 +48,52 @@ def load_data():
         "x-as": "x_as",
         "y-as": "y_as",
         "Unnamed: 4": "richting",
-        "Unnamed: 6": "thema"
+        "Unnamed: 6": "thema",
+        "# vraag": "# vraag"  # Zorg dat deze kolom aanwezig is
     })
     df = df[df['vraag'].notna() & (df['vraag'] != '')]
+    df.reset_index(drop=True, inplace=True)
     return df
 
 df = load_data()
+total_questions = len(df)
 
-antwoorden = []
-st.write("Beantwoord de onderstaande vragen:")
+# Initialiseer session_state voor huidige vraagindex en antwoorden
+if 'q_index' not in st.session_state:
+    st.session_state.q_index = 0
+if 'answers' not in st.session_state:
+    st.session_state.answers = []
 
-for i, row in df.iterrows():
-    antwoord = st.radio(
-        f"{int(row['# vraag'])}. {row['vraag']} - Thema: {row['thema']}",
-        options=[5, 4, 3, 2, 1],
-        format_func=lambda x: {
-            5: "Helemaal mee eens",
-            4: "Mee eens",
-            3: "Neutraal",
-            2: "Mee oneens",
-            1: "Helemaal niet mee eens"
-        }[x],
-        key=f"vraag_{i}"
-    )
-    antwoorden.append(antwoord)
-
-if st.button("Verstuur"):
-    df["antwoord"] = antwoorden
-
-    # Bereken scores voor x-as (actief) en y-as (motivatie)
-    x_score = df[df["x_as"].notna()]["antwoord"].sum()
-    y_score = df[df["y_as"].notna()]["antwoord"].sum()
-
-    max_x = len(df[df["x_as"].notna()]) * 5
-    max_y = len(df[df["y_as"].notna()]) * 5
-    x_norm = round((x_score / max_x) * 100)
-    y_norm = round((y_score / max_y) * 100)
-
-    st.subheader("📊 Jouw resultaat")
-    st.markdown(f"**Actief-score (x-as):** {x_norm}/100")
-    st.markdown(f"**Motivatie-score (y-as):** {y_norm}/100")
-
-    # Bepaal kwadrant en geef begeleidende uitleg
-    if x_norm < 50 and y_norm < 50:
-        kwadrant = "Niet actief & niet gemotiveerd"
-        kleur = "🔴"
-        uitleg = ("Je hebt zowel een lage actief-score als een lage motivatie-score. "
-                 "Het is wellicht tijd om kleine, haalbare doelen te stellen om meer beweging en energie in je leven te brengen.")
-    elif x_norm < 50 and y_norm >= 50:
-        kwadrant = "Niet actief & wél gemotiveerd"
-        kleur = "🟡"
-        uitleg = ("Je bent gemotiveerd, maar je actieve gedrag blijft achter. "
-                 "Overweeg om te starten met kleine stappen om meer beweging te integreren in je dagelijks leven.")
-    elif x_norm >= 50 and y_norm < 50:
-        kwadrant = "Wél actief & niet gemotiveerd"
-        kleur = "🟠"
-        uitleg = ("Je bent actief, maar er ontbreekt nog de motivatie. "
-                 "Het kan helpen om doelen te stellen die echt belangrijk voor je zijn, zodat je meer energie en enthousiasme ontwikkelt.")
-    else:
-        kwadrant = "Wél actief & wél gemotiveerd"
-        kleur = "🟢"
-        uitleg = ("Je scoort hoog op zowel actief gedrag als motivatie. "
-                 "Blijf op deze weg en zoek naar manieren om je gezonde levensstijl nog verder te optimaliseren.")
-
-    st.markdown(f"**Je valt in het kwadrant:** {kleur} **{kwadrant}**")
-    st.markdown(uitleg)
-
-    # Visualisatie: 4-kwadranten assenstelsel met een stip voor jouw score
-    fig, ax = plt.subplots()
-    ax.set_xlim(0, 100)
-    ax.set_ylim(0, 100)
-
-    # Achtergrondkleuren per kwadrant
-    ax.axhspan(50, 100, xmin=0.5, xmax=1.0, facecolor='#c8facc')  # Rechtsboven: wél actief & wél gemotiveerd
-    ax.axhspan(50, 100, xmin=0.0, xmax=0.5, facecolor='#fff9c4')  # Linksboven: niet actief & wél gemotiveerd
-    ax.axhspan(0, 50, xmin=0.0, xmax=0.5, facecolor='#ffcdd2')    # Linksonder: niet actief & niet gemotiveerd
-    ax.axhspan(0, 50, xmin=0.5, xmax=1.0, facecolor='#ffe0b2')    # Rechtsonder: wél actief & niet gemotiveerd
-
-    ax.axvline(50, color='black', linestyle='--')
-    ax.axhline(50, color='black', linestyle='--')
-
-    ax.plot(x_norm, y_norm, 'ko')
-    ax.text(x_norm + 2, y_norm + 2, "Jij", fontsize=12)
-    ax.set_xlabel("Actief")
-    ax.set_ylabel("Gemotiveerd")
-    st.pyplot(fig)
-
-    # Thema-analyse: gemiddelde score per thema
-    st.subheader("📚 Thema-overzicht")
-    themas = df.groupby("thema")["antwoord"].mean().sort_values(ascending=False)
-    for thema, score in themas.items():
-        st.markdown(f"**{thema}**: {round(score, 1)} / 5")
+# Toon één vraag per keer
+if st.session_state.q_index < total_questions:
+    question = df.iloc[st.session_state.q_index]
+    with st.container():
+        st.markdown(f"### Vraag {st.session_state.q_index + 1} van {total_questions}")
+        st.markdown(f"**{int(question['# vraag'])}. {question['vraag']}**")
+        st.markdown(f"**Thema:** {question['thema']}")
+        
+        # Likert-schaal met tekstopties (zonder cijfers)
+        options = [
+            "Helemaal niet mee eens",
+            "Mee oneens",
+            "Neutraal",
+            "Mee eens",
+            "Helemaal mee eens"
+        ]
+        # Toon de radio-buttons horizontaal als scorebalk
+        antwoord = st.radio("Selecteer jouw mening:", options, horizontal=True, key=f"vraag_{st.session_state.q_index}")
+        
+        if st.button("Volgende"):
+            st.session_state.answers.append(antwoord)
+            st.session_state.q_index += 1
+            st.experimental_rerun()
+else:
+    st.success("Je hebt alle vragen beantwoord!")
+    st.markdown("### Jouw antwoorden:")
+    for i, ans in enumerate(st.session_state.answers):
+        st.markdown(f"**Vraag {i+1}:** {ans}")
+    
+    if st.button("Opnieuw beginnen"):
+        st.session_state.q_index = 0
+        st.session_state.answers = []
+        st.experimental_rerun()
