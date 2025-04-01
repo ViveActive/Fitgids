@@ -1,16 +1,15 @@
 import streamlit as st
 import pandas as pd
 from PIL import Image
-import matplotlib.pyplot as plt
 
-# Custom CSS voor een mooie, schermvullende layout
+# Custom CSS voor een schermvullende vraagweergave en mooie styling
 st.markdown(
     """
     <style>
     body {
         background-color: #f0f2f6;
     }
-    h1, h3 {
+    h1, h3, h4 {
         font-family: 'Segoe UI', sans-serif;
         color: #2e7d32;
     }
@@ -26,6 +25,7 @@ st.markdown(
         justify-content: center;
         align-items: center;
         height: 80vh;
+        text-align: center;
     }
     </style>
     """,
@@ -49,7 +49,7 @@ def load_data():
         "y-as": "y_as",
         "Unnamed: 4": "richting",
         "Unnamed: 6": "thema",
-        "# vraag": "# vraag"  # Zorg dat deze kolom aanwezig is
+        "# vraag": "# vraag"
     })
     df = df[df['vraag'].notna() & (df['vraag'] != '')]
     df.reset_index(drop=True, inplace=True)
@@ -64,13 +64,14 @@ if 'q_index' not in st.session_state:
 if 'answers' not in st.session_state:
     st.session_state.answers = []
 
-# Toon één vraag per keer
+# Toon één vraag per keer in een schermvullende container
 if st.session_state.q_index < total_questions:
     question = df.iloc[st.session_state.q_index]
     with st.container():
-        st.markdown(f"### Vraag {st.session_state.q_index + 1} van {total_questions}")
-        st.markdown(f"**{int(question['# vraag'])}. {question['vraag']}**")
-        st.markdown(f"**Thema:** {question['thema']}")
+        st.markdown('<div class="question-container">', unsafe_allow_html=True)
+        st.markdown(f"### Vraag {st.session_state.q_index + 1} van {total_questions}", unsafe_allow_html=True)
+        st.markdown(f"<h3><strong>{int(question['# vraag'])}. {question['vraag']}</strong></h3>", unsafe_allow_html=True)
+        st.markdown(f"<h4>Thema: {question['thema']}</h4>", unsafe_allow_html=True)
         
         # Likert-schaal met tekstopties (zonder cijfers)
         options = [
@@ -80,13 +81,13 @@ if st.session_state.q_index < total_questions:
             "Mee eens",
             "Helemaal mee eens"
         ]
-        # Toon de radio-buttons horizontaal als scorebalk
         antwoord = st.radio("Selecteer jouw mening:", options, horizontal=True, key=f"vraag_{st.session_state.q_index}")
         
         if st.button("Volgende"):
             st.session_state.answers.append(antwoord)
             st.session_state.q_index += 1
             st.experimental_rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
 else:
     st.success("Je hebt alle vragen beantwoord!")
     st.markdown("### Jouw antwoorden:")
